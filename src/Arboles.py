@@ -1,6 +1,5 @@
 import csv
 from datetime import datetime
-import os
 
 class Nodo:
     def __init__(self, url, nombre):
