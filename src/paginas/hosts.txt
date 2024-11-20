@@ -1,0 +1,4 @@
+ruta                   dominio        ip
+C:.\paginas\google.html www.google.com 129.42.789
+C:.\paginas\youtube.html www.youtube.com 129.42.780
+C:.\paginas\facebook.html www.facebook.com 129.42.781
