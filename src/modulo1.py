@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+import os
 
 class Nodo:
     def __init__(self, url, nombre):
@@ -92,7 +93,7 @@ class ArbolAVL:
         if root:
             self.mostrar_favoritos(root.izquierda)
             self.mostrar_favoritos(root.derecha)
-            print(f"{root.url} - {root.nombre} - {root.fecha}")
+            print(f"URL: {root.url} - Nombre: {root.nombre} - Fecha: {root.fecha}")
 
     # Eliminar un favorito del árbol
     def eliminar_favorito(self, root, url):
@@ -140,57 +141,69 @@ class ArbolAVL:
             current = current.izquierda
         return current
 
-# Funciones para manejar el archivo CSV
-def cargar_favoritos():
-    favoritos = []
-    try:
-        with open('favoritos.csv', mode='r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                if row:  # Evitar filas vacías
-                    url, nombre, fecha = row
-                    favoritos.append((url, nombre, fecha))
-    except FileNotFoundError:
-        print("El archivo favoritos.csv no existe.")
-    return favoritos
+    # Función para cargar los favoritos desde el archivo CSV y agregar al árbol
+    def cargar_favoritos(self):
+        favoritos = []
+        ruta = 'favoritos.csv'  # Ruta del archivo CSV
 
-def guardar_favoritos(favoritos):
-    with open('favoritos.csv', mode='w', newline='') as file:
-        writer = csv.writer(file)
-        for url, nombre, fecha in favoritos:
-            writer.writerow([url, nombre, fecha])
-    print(f"Se han guardado {len(favoritos)} favoritos en el archivo favoritos.csv.")
+        # Verificar si el archivo existe
+        if not os.path.exists(ruta):
+            print(f"El archivo {ruta} no existe.")
+            return favoritos
 
-# Funciones para manejar los comandos
-def agregar_favorito_comando(arbol, favoritos, url, nombre):
-    if not url or not nombre:
-        print("Error: La URL o el nombre del sitio no pueden estar vacíos.")
-        return
-    arbol.agregar_favorito(url, nombre)
-    favoritos.append((url, nombre, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    guardar_favoritos(favoritos)
-    print(f"Favorito agregado: {url}")
+        # Leer el archivo y cargar los favoritos en el árbol
+        try:
+            with open(ruta, mode='r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    if row:  # Evitar filas vacías
+                        url, nombre, fecha = row
+                        favoritos.append((url, nombre, fecha))
+                        self.agregar_favorito(url, nombre)  # Agregar al árbol AVL
+        except Exception as e:
+            print(f"Error al leer el archivo: {e}")
 
-def eliminar_favorito_comando(arbol, favoritos, url):
-    print(f"Eliminando el favorito con URL: {url}")
-    arbol.raiz = arbol.eliminar_favorito(arbol.raiz, url)
-    favoritos = [f for f in favoritos if f[0] != url]
-    guardar_favoritos(favoritos)
-    print(f"Favorito eliminado: {url}")
+        return favoritos
 
-def buscar_favorito_comando(arbol, url):
-    favorito = arbol.buscar_favorito(arbol.raiz, url)
-    if favorito:
-        print(f"Favorito encontrado: {favorito.url} - {favorito.nombre} - {favorito.fecha}")
-    else:
-        print("Favorito no encontrado.")
+    def guardar_favoritos(self, favoritos):
+        ruta = 'favoritos.csv'
+        with open(ruta, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            for url, nombre, fecha in favoritos:
+                writer.writerow([url, nombre, fecha])
+        print(f"Se han guardado {len(favoritos)} favoritos en el archivo {ruta}.")
 
-def mostrar_favoritos_comando(arbol):
-    print("Favoritos:")
-    arbol.mostrar_favoritos(arbol.raiz)
+    # Funciones para manejar los comandos
+    def agregar_favorito_comando(self, favoritos, url, nombre):
+        if not url or not nombre:
+            print("Error: La URL o el nombre del sitio no pueden estar vacíos.")
+            return
+        self.agregar_favorito(url, nombre)
+        favoritos.append((url, nombre, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        self.guardar_favoritos(favoritos)
+        print(f"Favorito agregado: {url}")
+
+    def eliminar_favorito_comando(self, favoritos, url):
+        print(f"Eliminando el favorito con URL: {url}")
+        self.raiz = self.eliminar_favorito(self.raiz, url)
+        favoritos = [f for f in favoritos if f[0] != url]
+        self.guardar_favoritos(favoritos)
+        print(f"Favorito eliminado: {url}")
+
+    def buscar_favorito_comando(self, url):
+        favorito = self.buscar_favorito(self.raiz, url)
+        if favorito:
+            print(f"Favorito encontrado: {favorito.url} - {favorito.nombre} - {favorito.fecha}")
+        else:
+            print("Favorito no encontrado.")
+
+    def mostrar_favoritos_comando(self):
+        print("Favoritos:")
+        self.mostrar_favoritos(self.raiz)
+
 
 # Función principal para ejecutar los comandos
-def main():
+"""def main():
     arbol = ArbolAVL()
     favoritos = cargar_favoritos()
 
@@ -246,3 +259,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+"""

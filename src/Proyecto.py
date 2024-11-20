@@ -6,6 +6,9 @@ import threading
 import os
 from bs4 import BeautifulSoup
 from modulo3 import ArbolBB
+from modulo1 import ArbolAVL
+from modulo2 import NArbol
+from modulo4 import BTreeCache
 
 class Module4: # MODULO 4 CON SUS COMANDOS Y SUS METODOS
     def __init__(self):
@@ -49,6 +52,23 @@ class Module4: # MODULO 4 CON SUS COMANDOS Y SUS METODOS
 
     def actualizar_archivo(self,archivo):
         self.archivo_actual = archivo
+        
+    def agregar_cache(self, url, contenido):
+        cache.insertar(url, contenido)
+
+    # Comando para obtener caché
+    def obtener_cache(self, url):
+        contenido = cache.buscar(url)
+        if contenido:
+            return contenido
+        return "No encontrado en caché"
+
+    # Comando para vaciar caché por URL o por fecha
+    def vaciar_cache(self, url=None, fecha=None):
+        if url:
+            cache.eliminar_por_url(url)
+        elif fecha:
+            cache.eliminar_por_fecha(fecha)
 
 class Module2: # MODULO 2 Y SUS METODOS
     def __init__(self):
@@ -79,8 +99,7 @@ class Module2: # MODULO 2 Y SUS METODOS
                     print("No se puedo encontrar dicha Url o Ip.")
             except Exception:
                 print("Url o Ip inexistente.")
-
-
+                
     def cerrar_pestaña(self,arg): # METODO PARA CERRAR LA PRIMERA PESTAÑA
         if self.pestaña_actual:
             print(f"Cerrando la pestaña con: {self.pestaña_actual.url}")
@@ -247,7 +266,7 @@ class Module3: # MODULO 3 Y SUS METODOS
                     writer.writerow(descarga)
 
     def filtrar_descargas(self):
-        with open("src/descargas.csv", mode='r') as archivo:
+        with open("descargas.csv", mode='r') as archivo:
             try:
                 reader = csv.reader(archivo)
                 next(reader)
@@ -288,14 +307,14 @@ class Module3: # MODULO 3 Y SUS METODOS
             print("Opción no válida")
 
     def cargar_busquedas(self):
-        with open('src/busquedas.csv', mode='r') as csvfile:
+        with open('busquedas.csv', mode='r') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 arbol3.cargar([row[0], row[1]])
 
     def _eliminar_del_csv(self, valor, indice):
         filas_filtradas = []
-        with open('src/busquedas.csv', mode='r') as csvfile:
+        with open('busquedas.csv', mode='r') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 if indice == 0:
@@ -305,7 +324,7 @@ class Module3: # MODULO 3 Y SUS METODOS
                     if row[indice] < valor:
                         filas_filtradas.append(row)
 
-        with open('src/busquedas.csv', mode='w', newline='') as csvfile:
+        with open('busquedas.csv', mode='w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(filas_filtradas)
 
@@ -374,23 +393,80 @@ class Module1: # MODULO 1 Y SUS METODOS
             for row in reader:
                 print(row)
         print("")
+        
+    # Funciones para manejar el archivo CSV
+    def cargar_favoritos(self):
+        favoritos = []
+        try:
+            with open('favoritos.csv', mode='r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    if row:  # Evitar filas vacías
+                        url, nombre, fecha = row
+                        favoritos.append((url, nombre, fecha))
+        except FileNotFoundError:
+            print("El archivo favoritos.csv no existe.")
+        return favoritos
 
-class Main: # MODULO PRINCIPAL
+    def guardar_favoritos(self,favoritos):
+        with open('favoritos.csv', mode='w', newline='') as file:
+            writer = csv.writer(file)
+            for url, nombre, fecha in favoritos:
+                writer.writerow([url, nombre, fecha])
+        print(f"Se han guardado {len(favoritos)} favoritos en el archivo favoritos.csv.")
+
+    # Funciones para manejar los comandos
+    def agregar_favorito(self,url, nombre):
+        if not url or not nombre:
+            print("Error: La URL o el nombre del sitio no pueden estar vacíos.")
+            return
+        arbol1.agregar_favorito_comando(url, nombre)
+        lista= self.cargar_favoritos()
+        lista.append((url, nombre, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        arbol1.guardar_favoritos(lista)
+        print(f"Favorito agregado: {url}")
+
+    def eliminar_favorito(self,url):
+        print(f"Eliminando el favorito con URL: {url}")
+        
+        # Eliminar el favorito del árbol
+        arbol1.raiz = arbol1.eliminar_favorito(arbol1.raiz, url)
+        lista= self.cargar_favoritos()
+        # Eliminar el favorito de la lista de favoritos
+        favoritos = [f for f in lista if f[0] != url]
+
+        # Guardar la lista de favoritos actualizada
+        self.guardar_favoritos(favoritos)
+        
+        print(f"Favorito eliminado: {url}")
+    
+    def buscar_favorito(self,url=str):
+        favorito = arbol1.buscar_favorito(arbol1.raiz,url)
+        if favorito:
+            print(f"Favorito encontrado: {favorito.url} - {favorito.nombre} - {favorito.fecha}")
+        else:
+            print("Favorito no encontrado.")
+
+    def mostrar_favoritos(self,args):
+        arbol1.mostrar_favoritos(arbol1.raiz)        
+
+class Main:  # MODULO PRINCIPAL
     def __init__(self):
         self.modulos = {
-            "Modulo1" : ["ir", "atras", "adelante","mostrar_historial"],
-            "Modulo2" : ["nueva_pestaña", "cerrar_pestaña", "cambiar_pestaña","mostrar_pestañas"],
-            "Modulo3" : ["descargar", "mostrar_descargas","cancelar_descarga", "buscar","mostrar_historial_busquedas","eliminar_busqueda"],
-            "Modulo4" : ["mostrar_contenido","listar_paginas"]
+            "Modulo1": ["ir", "atras", "adelante", "mostrar_historial", "mostrar_favoritos", "buscar_favorito", "eliminar_favorito", "agregar_favorito"],
+            "Modulo2": ["nueva_pestaña", "cerrar_pestaña", "cambiar_pestaña", "mostrar_pestañas"],
+            "Modulo3": ["descargar", "mostrar_descargas", "cancelar_descarga", "buscar", "mostrar_historial_busquedas", "eliminar_busqueda"],
+            "Modulo4": ["mostrar_contenido", "listar_paginas","agregar_cache","obtener_cache","vaciar_cache"]
         }
 
-    def Inicio(self): # METODO QUE INTERPRETA LA PETICION DEL USUARIO
-        #try:
-            print("> ",end='')
+    def Inicio(self):  # METODO QUE INTERPRETA LA PETICION DEL USUARIO
+        try:
+            print("> ", end='')
             comando = input().lower().split()
+            
             if comando[0] == "salir":
                 for letra in "Cerrando el navegador. ¡Hasta la próxima!":
-                    print(letra, end='',flush=True)
+                    print(letra, end='', flush=True)
                     time.sleep(0.025)
                 time.sleep(2)
                 print()
@@ -400,34 +476,45 @@ class Main: # MODULO PRINCIPAL
                 print()
                 os._exit(0)
                 return
+            
             elif comando[0] == "/help":
                 print("\nir <url o ip>\natras\nadelante\n"
-                    "mostrar_historial\nnueva_pestaña <url o ip>\n"
-                    "cerrar_pestaña\ncambiar_pestaña <n>\nmostrar_pestañas"
-                    "\ndescargar <url>\nmostrar_descargas\n"
-                    "cancelar_descarga <n>\nlistar_paginas\n"
-                    "mostrar_contenido <archivo.html> <modo>\n")
+                      "mostrar_historial\nnueva_pestaña <url o ip>\n"
+                      "cerrar_pestaña\ncambiar_pestaña <n>\nmostrar_pestañas"
+                      "\ndescargar <url>\nmostrar_descargas\n"
+                      "cancelar_descarga <n>\nlistar_paginas\n"
+                      "mostrar_contenido <archivo.html> <modo>\n")
+            
             else:
+                # Asegúrate de que haya al menos dos partes en el comando
                 if len(comando) < 2:
                     comando.append(None)
+                
+                # Itera a través de los módulos y verifica si el comando coincide
                 for clave, lista in self.modulos.items():
                     for valor in lista:
                         if comando[0] == valor:
                             if comando[0] == "eliminar_busqueda":
                                 if comando[1] == "--fecha":
-                                    comando[2] += " "+comando[3]
-                                    eval(clave+"."+valor+"("+'comando[1]'+","+'comando[2]'+")")
+                                    comando[2] += " " + comando[3]
+                                    eval(clave + "." + valor + "(" + 'comando[1]' + "," + 'comando[2]' + ")")
+                            elif comando[0] == "agregar_favorito":
+                                # Si el comando es "agregar_favorito", asegúrate de pasar los dos parámetros (URL y nombre)
+                                if len(comando) >= 3:  # Verifica que se hayan pasado al menos 2 parámetros
+                                    eval(clave + "." + valor + "(" + 'comando[1]' + "," + 'comando[2]' + ")")
+                                else:
+                                    print("Error: Se requiere una URL y un nombre para agregar un favorito.")
                             elif comando[0] != "mostrar_contenido":
-                                eval(clave+"."+valor+"("+'comando[1]'+")")
+                                eval(clave + "." + valor + "(" + 'comando[1]' + ")")
                             elif len(comando) == 3:
-                                eval(clave+"."+valor+"("+'comando[1]'+","+'comando[2]'+")")
+                                eval(clave + "." + valor + "(" + 'comando[1]' + "," + 'comando[2]' + ")")
                             else:
-                                eval(clave+"."+valor+"("+'None'+","+'comando[1]'+")")
-
-        #except Exception:
-            #pass
-            
-            self.Inicio()
+                                eval(clave + "." + valor + "(" + 'None' + "," + 'comando[1]' + ")")
+        
+        except Exception as e:
+            print(f"Ocurrió un error: {e}")
+        
+        self.Inicio()
 
 
 print("\nBienvenido al Simulador de Navegador Web en Consola.\n"
@@ -438,6 +525,9 @@ Modulo2 = Module2()
 Modulo3 = Module3()
 Modulo4 = Module4()
 arbol3 = ArbolBB()
+arbol1 = ArbolAVL()
+cache = BTreeCache(orden=4)
 Modulo3.filtrar_descargas()
 Modulo3.cargar_busquedas()
+arbol1.cargar_favoritos()
 principal.Inicio()
