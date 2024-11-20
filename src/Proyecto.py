@@ -5,10 +5,11 @@ import time
 import threading
 import os
 from bs4 import BeautifulSoup
+from modulo3 import ArbolBB
 
 class Module4: # MODULO 4 CON SUS COMANDOS Y SUS METODOS
     def __init__(self):
-        self.carpeta = r".\paginas" # Indica la ruta de los archivos
+        self.carpeta = r"src\paginas" # Indica la ruta de los archivos
         self.archivo_actual = None
 
     def listar_paginas(self,arg): # METODO PARA LISTAR LOS ARCHIVOS.HTML CONSEGUIDOS
@@ -53,7 +54,7 @@ class Module2: # MODULO 2 Y SUS METODOS
     def __init__(self):
         self.pestañas = ListaDoblamenteEnlazada()
         self.pestaña_actual = None
-        self.hosts = r".\paginas\hosts.txt"
+        self.hosts = r"src\paginas\hosts.txt"
 
     def nueva_pestaña(self, url): # METODO PARA ABRIR UNA NUEVA PESTAÑA
         if url == None:
@@ -203,7 +204,7 @@ class Module3: # MODULO 3 Y SUS METODOS
 
     def mostrar_descargas(self,arg): # METODO PARA MOSTRAR EL REGISTRO DE DESCARGAS
         print("\nCola de descargas:")
-        with open("descargas.csv", mode='r') as file: # Lee el archivo descargas.csv y lo imprime
+        with open("src/descargas.csv", mode='r') as file: # Lee el archivo descargas.csv y lo imprime
             reader = csv.reader(file)
             i = 0
             for row in reader:
@@ -215,7 +216,7 @@ class Module3: # MODULO 3 Y SUS METODOS
         print("")
 
     def actualizar_descargas(self,n):
-        with open("descargas.csv", mode='r') as csvfile:
+        with open("src/descargas.csv", mode='r') as csvfile:
             reader = csv.reader(csvfile)
             next(reader)
             filtrado = []
@@ -226,7 +227,7 @@ class Module3: # MODULO 3 Y SUS METODOS
                 else:
                     filtrado.append((linea[0],linea[1],linea[2],linea[3]))
 
-        with open("descargas.csv", mode='w', newline='') as archivo:
+        with open("src/descargas.csv", mode='w', newline='') as archivo:
             writer = csv.writer(archivo)
             writer.writerow(("Archivo","Tamaño","Estado","Fecha y Hora"))
             for i in filtrado:
@@ -235,18 +236,18 @@ class Module3: # MODULO 3 Y SUS METODOS
 
     def guardar_descargas(self,n): # METODO QUE ACTUALIZA EL ARCHIVO descargas.csv
         if n != None:
-            with open("descargas.csv",'a', newline='') as file:
+            with open("src/descargas.csv",'a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(self.descargas[n-1])
         else:
-            with open("descargas.csv",'w',newline='') as file:
+            with open("src/descargas.csv",'w',newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(("Archivo","Tamaño","Estado","Fecha y Hora"))
                 for descarga in self.descargas:
                     writer.writerow(descarga)
 
     def filtrar_descargas(self):
-        with open("descargas.csv", mode='r') as archivo:
+        with open("src/descargas.csv", mode='r') as archivo:
             try:
                 reader = csv.reader(archivo)
                 next(reader)
@@ -259,7 +260,7 @@ class Module3: # MODULO 3 Y SUS METODOS
                         filtrado.append(self.descargas[i])
                         i+=1
 
-                with open("descargas.csv", mode='w', newline='') as archivo:
+                with open("src/descargas.csv", mode='w', newline='') as archivo:
                     writer = csv.writer(archivo)
                     writer.writerow(("Archivo","Tamaño","Estado","Fecha y Hora"))
                     for i in filtrado:
@@ -267,12 +268,52 @@ class Module3: # MODULO 3 Y SUS METODOS
 
             except Exception:
                 return
+            
+    def buscar(self, clave):
+        arbol3.buscar_clave(clave)
+
+    def mostrar_historial_busquedas(self, arg):
+        arbol3.inorder(arbol3.raiz)
+    
+    def eliminar_busqueda(self, opcion, arg):
+        if opcion == '--key':
+            arbol3.eliminar_clave(arg)
+            self._eliminar_del_csv(arg, 0)
+            print(f"Se han eliminado las búsquedas con la palabra clave: {arg}")
+        elif opcion == '--fecha':
+            arbol3.eliminar_fecha(arg)
+            self._eliminar_del_csv(arg, 1)
+            print(f"Se han eliminado las búsquedas de fecha posterior a: {arg}")
+        else:
+            print("Opción no válida")
+
+    def cargar_busquedas(self):
+        with open('src/busquedas.csv', mode='r') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                arbol3.cargar([row[0], row[1]])
+
+    def _eliminar_del_csv(self, valor, indice):
+        filas_filtradas = []
+        with open('src/busquedas.csv', mode='r') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                if indice == 0:
+                    if valor not in row[indice]:
+                        filas_filtradas.append(row)
+                else:
+                    if row[indice] < valor:
+                        filas_filtradas.append(row)
+
+        with open('src/busquedas.csv', mode='w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(filas_filtradas)
 
 class Module1: # MODULO 1 Y SUS METODOS
     def __init__(self):
         self.historial = [] # Lista que guarda el historial de busquedas
         self.historial_adelante = [] # Lista que guarda las busquedas posteriores
-        self.hosts = r".\paginas\hosts.txt"
+        self.hosts = r"src\paginas\hosts.txt"
 
     def ir(self, url): # METODO QUE PERMITE VISITAR UNA IP O URL
         archivo = None
@@ -297,9 +338,10 @@ class Module1: # MODULO 1 Y SUS METODOS
             if check == True:
                 self.historial.append((url, datetime.now()))
                 self.historial_adelante.clear()
+                arbol3.insertar(url)
                 print(f"Visitando: {url}")
 
-                with open("historial.csv", 'a', newline='') as csvfile: 
+                with open("src/historial.csv", 'a', newline='') as csvfile: 
                     writer = csv.writer(csvfile)
                     url, timestamp = self.historial[-1]
                     writer.writerow([url, timestamp])
@@ -338,12 +380,12 @@ class Main: # MODULO PRINCIPAL
         self.modulos = {
             "Modulo1" : ["ir", "atras", "adelante","mostrar_historial"],
             "Modulo2" : ["nueva_pestaña", "cerrar_pestaña", "cambiar_pestaña","mostrar_pestañas"],
-            "Modulo3" : ["descargar", "mostrar_descargas","cancelar_descarga"],
+            "Modulo3" : ["descargar", "mostrar_descargas","cancelar_descarga", "buscar","mostrar_historial_busquedas","eliminar_busqueda"],
             "Modulo4" : ["mostrar_contenido","listar_paginas"]
         }
 
     def Inicio(self): # METODO QUE INTERPRETA LA PETICION DEL USUARIO
-        try:
+        #try:
             print("> ",end='')
             comando = input().lower().split()
             if comando[0] == "salir":
@@ -371,17 +413,21 @@ class Main: # MODULO PRINCIPAL
                 for clave, lista in self.modulos.items():
                     for valor in lista:
                         if comando[0] == valor:
-                            if comando[0] != "mostrar_contenido":
+                            if comando[0] == "eliminar_busqueda":
+                                if comando[1] == "--fecha":
+                                    comando[2] += " "+comando[3]
+                                    eval(clave+"."+valor+"("+'comando[1]'+","+'comando[2]'+")")
+                            elif comando[0] != "mostrar_contenido":
                                 eval(clave+"."+valor+"("+'comando[1]'+")")
                             elif len(comando) == 3:
                                 eval(clave+"."+valor+"("+'comando[1]'+","+'comando[2]'+")")
                             else:
                                 eval(clave+"."+valor+"("+'None'+","+'comando[1]'+")")
 
-        except Exception:
-            pass
+        #except Exception:
+            #pass
             
-        self.Inicio()
+            self.Inicio()
 
 
 print("\nBienvenido al Simulador de Navegador Web en Consola.\n"
@@ -391,5 +437,7 @@ Modulo1 = Module1()
 Modulo2 = Module2()
 Modulo3 = Module3()
 Modulo4 = Module4()
+arbol3 = ArbolBB()
 Modulo3.filtrar_descargas()
+Modulo3.cargar_busquedas()
 principal.Inicio()

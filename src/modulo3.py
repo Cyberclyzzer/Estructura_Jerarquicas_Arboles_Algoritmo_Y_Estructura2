@@ -1,5 +1,4 @@
 import csv
-from time import sleep
 from datetime import datetime
 
 class Nodo:
@@ -9,6 +8,7 @@ class Nodo:
         self.izquierda = None
         self.derecha = None
 
+    def guardar(self):
         with open('src/busquedas.csv', mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([self.url, self.fecha])
@@ -20,34 +20,36 @@ class ArbolBB:
     def insertar(self, url):
         if self.raiz is None:
             self.raiz = Nodo(url)
+            self.raiz.guardar()
         else:
             self._insertar_rec(self.raiz, url)
 
     def _insertar_rec(self, nodo, url):
-        sleep(1)
         if url < nodo.url:
             if nodo.izquierda is None:
                 nodo.izquierda = Nodo(url)
+                nodo.izquierda.guardar()
             else:
                 self._insertar_rec(nodo.izquierda, url)
         else:
             if nodo.derecha is None:
                 nodo.derecha = Nodo(url)
+                nodo.derecha.guardar()
             else:
                 self._insertar_rec(nodo.derecha, url)
 
-    def buscar(self, clave):
+    def buscar_clave(self, clave):
         resultados = []
-        self.buscar_clave(self.raiz, clave, resultados)
+        self.buscar_palabra_clave(self.raiz, clave, resultados)
         for nodo in resultados:
             print(f"{nodo.url} - {nodo.fecha}")
     
-    def buscar_clave(self, nodo, clave, resultados):
+    def buscar_palabra_clave(self, nodo, clave, resultados):
         if nodo is not None:
-            self.buscar_clave(nodo.izquierda, clave, resultados)
+            self.buscar_palabra_clave(nodo.izquierda, clave, resultados)
             if clave in nodo.url:
                 resultados.append(nodo)
-            self.buscar_clave(nodo.derecha, clave, resultados)
+            self.buscar_palabra_clave(nodo.derecha, clave, resultados)
 
     def eliminar_clave(self, palabra_clave):
         self.raiz = self._eliminar_nodos_con_palabra_clave(self.raiz, palabra_clave)
@@ -99,13 +101,24 @@ class ArbolBB:
             self.inorder(nodo.derecha)
         else:
             return
+        
+    def cargar(self, array):
+        nuevo = Nodo(array[0])
+        nuevo.fecha = array[1]
+        
+        if self.raiz is None:
+            self.raiz = nuevo
+        else:
+            self._cargar_rec(self.raiz, nuevo)
 
-def eliminar_busqueda(opcion, arg):
-    if opcion == '--key':
-        arbol.eliminar_clave(arg)
-    elif opcion == '--fecha':
-        arbol.eliminar_fecha(arg)
-    else:
-        print("Opción no válida")
-
-arbol = ArbolBB()
+    def _cargar_rec(self, nodo, nuevo):
+        if nuevo.url < nodo.url:
+            if nodo.izquierda is None:
+                nodo.izquierda = nuevo
+            else:
+                self._cargar_rec(nodo.izquierda, nuevo)
+        else:
+            if nodo.derecha is None:
+                nodo.derecha = nuevo
+            else:
+                self._cargar_rec(nodo.derecha, nuevo)
